@@ -1,56 +1,20 @@
 import { useState, useEffect } from 'react';
+import { Package, Clock, CheckCircle2, ChevronRight, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, MapPin, Calendar, Clock, Package, ChevronRight, ArrowRight } from 'lucide-react';
 import API from '../services/api';
 import { socket } from '../services/socket';
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchUserOrders = async () => {
-      try {
-        setLoading(true);
-        const { data } = await API.get('/orders/user');
-        setOrders(data);
-      } catch (err) {
-        console.warn('GET /api/orders/user endpoint failed, using mock data.');
-        setOrders([
-          {
-            _id: 'ord_7f28c5a1',
-            createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-            orderStatus: 'Processing',
-            totalPrice: 18.25,
-            shippingAddress: '123 Elm St, Springfield',
-            items: [
-              { productId: '1', name: 'Organic Fresh Bananas', quantity: 2, price: 2.99 },
-              { productId: '3', name: 'Whole Wheat Bread', quantity: 1, price: 3.29 },
-              { productId: '4', name: 'Fresh Organic Broccoli', quantity: 2, price: 1.99 },
-            ],
-          },
-          {
-            _id: 'ord_128db4ef',
-            createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-            orderStatus: 'Delivered',
-            totalPrice: 26.50,
-            shippingAddress: '123 Elm St, Springfield',
-            items: [
-              { productId: '2', name: 'Fresh Red Strawberries', quantity: 4, price: 4.49 },
-              { productId: '5', name: 'Organic Whole Milk', quantity: 2, price: 3.89 },
-            ],
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserOrders();
+    fetchOrders();
 
     socket.on('order_status_updated', (updatedOrder) => {
-      setOrders((prev) => prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)));
+      setOrders((prev) => 
+        prev.map(o => o._id === updatedOrder._id ? updatedOrder : o)
+      );
     });
 
     return () => {
@@ -58,137 +22,108 @@ const OrdersPage = () => {
     };
   }, []);
 
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await API.get('/orders/user');
+      setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+      console.error('Failed to fetch orders', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'Pending':
-        return { bg: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-400' };
-      case 'Processing':
-        return { bg: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-400' };
-      case 'Packed':
-        return { bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-400' };
-      case 'Out for Delivery':
-        return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-400' };
       case 'Delivered':
-        return { bg: 'bg-brand-50 text-brand-700 border-brand-200', dot: 'bg-brand-400' };
+        return { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' };
+      case 'Out for Delivery':
+        return { icon: Truck, color: 'text-brand-600', bg: 'bg-brand-50', border: 'border-brand-200' };
+      case 'Processing':
+      case 'Packed':
+        return { icon: Package, color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-200' };
       default:
-        return { bg: 'bg-surface-50 text-surface-700 border-surface-200', dot: 'bg-surface-400' };
+        return { icon: Clock, color: 'text-surface-600', bg: 'bg-surface-50', border: 'border-surface-200' };
     }
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <div className="w-10 h-10 border-3 border-brand-200 border-t-brand-500 rounded-full animate-spin"></div>
-        <p className="text-surface-500 text-sm">Loading your order history...</p>
+      <div className="container mx-auto px-4 py-12 flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 max-w-4xl space-y-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-surface-400">
-        <Link to="/" className="hover:text-brand-600 transition-colors">Home</Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-surface-700 font-medium">My Orders</span>
-      </div>
-
-      <div>
-        <h1 className="section-title">My Orders</h1>
-        <p className="section-subtitle">Track delivery statuses and review past purchases</p>
-      </div>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 max-w-4xl min-h-[80vh]">
+      
+      <h1 className="text-2xl font-display font-black text-surface-900 mb-8">My Orders</h1>
 
       {orders.length === 0 ? (
-        <div className="card p-10 text-center shadow-elevated">
-          <div className="w-20 h-20 bg-surface-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Package className="w-10 h-10 text-surface-300" />
+        <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-12 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 rounded-full bg-surface-50 border border-surface-100 flex items-center justify-center mb-6">
+            <Package className="w-10 h-10 text-surface-400" />
           </div>
-          <h3 className="text-lg font-bold text-surface-800">No Orders Yet</h3>
-          <p className="text-surface-500 text-sm mt-2 max-w-sm mx-auto">You haven't placed any grocery orders yet. Start shopping to fill your basket.</p>
-          <Link to="/products" className="btn-primary mt-6 inline-flex">
-            <span>Start Shopping</span>
-            <ArrowRight className="w-4 h-4" />
+          <h3 className="text-xl font-display font-bold text-surface-900">No orders yet</h3>
+          <p className="text-surface-500 mt-2 max-w-sm mx-auto text-sm">
+            Looks like you haven't placed an order yet. Discover our fresh groceries today!
+          </p>
+          <Link to="/products" className="btn-primary px-8 py-3 rounded-xl mt-8">
+            Start Shopping
           </Link>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {orders.map((order) => {
-            const statusConfig = getStatusConfig(order.orderStatus);
+            const StatusIcon = getStatusConfig(order.orderStatus).icon;
+            const statusStyle = getStatusConfig(order.orderStatus);
+
             return (
-              <div
-                key={order._id}
-                className="card-hover p-6 space-y-5"
-              >
-                {/* Order Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-surface-100 pb-4 gap-4">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="text-sm font-black text-surface-800 uppercase">
-                      Order #{order._id.substring(order._id.length - 8)}
-                    </span>
-                    <span className="text-surface-300 hidden sm:inline">|</span>
-                    <div className="flex items-center gap-1.5 text-xs text-surface-400">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{new Date(order.createdAt).toLocaleDateString()}</span>
+              <div key={order._id} className="bg-white rounded-2xl shadow-card border border-surface-200 overflow-hidden">
+                
+                {/* Header */}
+                <div className="p-4 sm:p-6 border-b border-surface-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono font-bold text-surface-900">#{order._id.slice(-8).toUpperCase()}</span>
+                      <span className="text-surface-300">•</span>
+                      <span className="text-sm text-surface-500">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
+                    <p className="text-sm font-bold text-surface-900">Total: ₹{order.totalPrice?.toFixed(0) || 0}</p>
                   </div>
-
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${statusConfig.bg}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}></span>
+                  
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${statusStyle.bg} ${statusStyle.border} ${statusStyle.color} text-sm font-bold w-fit`}>
+                    <StatusIcon className="w-4 h-4" />
                     {order.orderStatus}
-                  </span>
-                </div>
-
-                {/* Status Tracker */}
-                <div className="py-4 px-2">
-                  <div className="relative flex items-center justify-between">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-surface-100 rounded-full z-0"></div>
-                    {['Pending', 'Processing', 'Packed', 'Out for Delivery', 'Delivered'].map((step, index) => {
-                      const steps = ['Pending', 'Processing', 'Packed', 'Out for Delivery', 'Delivered'];
-                      const currentIndex = steps.indexOf(order.orderStatus);
-                      const isCompleted = index <= currentIndex;
-                      return (
-                        <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
-                          <div className={`w-4 h-4 rounded-full border-2 ${isCompleted ? 'bg-brand-500 border-brand-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-surface-100 border-surface-200'}`}></div>
-                          <span className={`hidden sm:block text-[10px] font-bold uppercase tracking-wider ${isCompleted ? 'text-brand-600' : 'text-surface-400'}`}>{step}</span>
-                        </div>
-                      )
-                    })}
                   </div>
                 </div>
 
                 {/* Items */}
-                <div className="space-y-3">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2.5">
-                        <span className="badge-brand text-xs px-2 py-0.5">
-                          {item.quantity}x
-                        </span>
-                        <span className="font-semibold text-surface-700">{item.name}</span>
+                <div className="p-4 sm:p-6 bg-surface-50">
+                  <h4 className="text-xs font-bold text-surface-500 uppercase tracking-widest mb-4">Order Items</h4>
+                  <div className="flex flex-wrap gap-4">
+                    {(order.items || []).map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-surface-200 w-full sm:w-auto min-w-[200px]">
+                        <div className="w-12 h-12 rounded-lg bg-surface-50 border border-surface-100 overflow-hidden shrink-0 flex items-center justify-center">
+                          <Package className="w-6 h-6 text-surface-300" />
+                        </div>
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="text-sm font-medium text-surface-900 truncate">{item.name}</p>
+                          <p className="text-xs text-surface-500">Qty: {item.quantity}</p>
+                        </div>
                       </div>
-                      <span className="font-bold text-surface-500">₹{(item.price * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-surface-100 gap-4 text-xs">
-                  <div className="flex items-center gap-1.5 text-surface-500 max-w-md">
-                    <MapPin className="w-4 h-4 flex-shrink-0 text-surface-400" />
-                    <span className="truncate">{order.shippingAddress}</span>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3.5">
-                    <span className="text-surface-400 font-bold uppercase tracking-wider text-[10px]">Total</span>
-                    <span className="text-base font-black text-brand-600">
-                      ₹{(order.totalPrice || 0).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
               </div>
             );
           })}
         </div>
       )}
+
     </div>
   );
 };

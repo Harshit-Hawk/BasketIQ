@@ -9,6 +9,7 @@ import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Basic route
 app.get('/api/health', (req, res) => {

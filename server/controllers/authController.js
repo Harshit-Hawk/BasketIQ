@@ -19,7 +19,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Determine role (default is customer)
-    const userRole = role && ['customer', 'admin'].includes(role) ? role : 'customer';
+    const userRole = role && ['customer', 'admin', 'delivery'].includes(role) ? role : 'customer';
 
     const user = await User.create({
       name,
@@ -133,6 +133,18 @@ export const updateUserProfile = async (req, res) => {
     } else {
       res.status(404).json({ message: 'User not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all users
+// @route   GET /api/auth/all
+// @access  Private/Admin
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

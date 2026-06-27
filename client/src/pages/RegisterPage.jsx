@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, User as UserIcon, UserPlus, AlertCircle, ShoppingBag } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, AlertCircle, ShoppingBag, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const RegisterPage = () => {
@@ -18,7 +18,9 @@ const RegisterPage = () => {
 
   useEffect(() => {
     if (user) {
-      const from = location.state?.from?.pathname || '/';
+      const urlParams = new URLSearchParams(location.search);
+      const redirect = urlParams.get('redirect') || '/home';
+      const from = location.state?.from?.pathname || redirect;
       navigate(from, { replace: true });
     }
   }, [user, navigate, location]);
@@ -31,12 +33,10 @@ const RegisterPage = () => {
       setError('Please fill in all fields.');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -56,132 +56,132 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 mb-6">
-            <span className="p-2.5 bg-gradient-to-br from-brand-500 to-brand-600 text-white rounded-xl shadow-lg shadow-brand-500/25">
-              <ShoppingBag className="w-6 h-6" />
-            </span>
-            <span className="text-2xl font-bold tracking-tight text-surface-900">
-              Basket<span className="bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">IQ</span>
-            </span>
-          </Link>
-          <h2 className="text-3xl font-black text-surface-900 tracking-tight">Create Account</h2>
-          <p className="text-surface-400 mt-2 text-sm">Join BasketIQ to buy fresh groceries daily</p>
+    <div className="min-h-[85vh] flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-surface-50">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-card border border-surface-200 p-6 sm:p-8 space-y-5 sm:space-y-6">
+        
+        <div className="text-center space-y-2 mb-2">
+          <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center bg-brand-600 mb-6">
+            <ShoppingBag className="w-6 h-6 text-white" />
+          </div>
+          <h2 className="display-title text-2xl">Create Account</h2>
+          <p className="text-surface-500 text-sm">Join BasketIQ today</p>
         </div>
 
-        <div className="card p-8 shadow-elevated">
-          {error && (
-            <div className="flex items-center gap-2.5 bg-red-50 text-red-600 p-4 rounded-xl text-sm mb-6 border border-red-100">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+        {error && (
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-sm">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="input-field pl-11"
-                  required
-                />
-                <UserIcon className="absolute left-4 top-3.5 w-4 h-4 text-surface-400" />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
+              Full Name
+            </label>
+            <div className="relative">
+              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+              <input
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input-field pl-11 py-2.5"
+                required
+              />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-field pl-11"
-                  required
-                />
-                <Mail className="absolute left-4 top-3.5 w-4 h-4 text-surface-400" />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field pl-11 py-2.5"
+                required
+              />
             </div>
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
                 Password
               </label>
               <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                 <input
                   type="password"
-                  placeholder="Min. 6 characters"
+                  placeholder="Min 6 chars"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-11"
+                  className="input-field pl-11 py-2.5"
                   required
                 />
-                <Lock className="absolute left-4 top-3.5 w-4 h-4 text-surface-400" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">
-                Confirm Password
+              <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
+                Confirm
               </label>
               <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input-field pl-11"
+                  className="input-field pl-11 py-2.5"
                   required
                 />
-                <Lock className="absolute left-4 top-3.5 w-4 h-4 text-surface-400" />
               </div>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-2">
-                Account Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="input-field"
-              >
-                <option value="customer">Customer (Browse & Buy)</option>
-                <option value="admin">Admin (Manage Products & Orders)</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary w-full py-3.5"
-            >
-              <UserPlus className="w-5 h-5" />
-              <span>{isSubmitting ? 'Creating Account...' : 'Create Account'}</span>
-            </button>
-          </form>
-
-          <div className="mt-8 text-center pt-6 border-t border-surface-100">
-            <p className="text-sm text-surface-500">
-              Already have an account?{' '}
-              <Link to="/login" className="font-bold text-brand-600 hover:text-brand-700 transition-colors">
-                Sign In
-              </Link>
-            </p>
           </div>
+
+          <div>
+            <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
+              Account Role
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="input-field py-2.5"
+            >
+              <option value="customer">Customer (Browse & Buy)</option>
+              <option value="delivery">Delivery Partner (Deliver Orders)</option>
+              <option value="admin">Admin (Manage Store)</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary w-full py-4 text-base mt-4 shadow-sm justify-center"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">Creating Account...</span>
+            ) : (
+              <span className="flex items-center gap-2">Create Account <ArrowRight className="w-4 h-4" /></span>
+            )}
+          </button>
+        </form>
+
+        <div className="pt-6 border-t border-surface-100 text-center">
+          <p className="text-sm text-surface-600">
+            Already have an account?{' '}
+            <Link to="/login" className="font-bold text-brand-600 hover:text-brand-700">
+              Sign In
+            </Link>
+          </p>
         </div>
+        
       </div>
     </div>
   );

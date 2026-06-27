@@ -1,55 +1,50 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ShoppingBag, Plus, Minus, ArrowRight, ShieldCheck, Sparkles, Leaf } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowRight, Minus, Plus, ShieldCheck, Truck, Clock } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import API from '../services/api';
 
+
 const CartPage = () => {
-  const {
-    cartItems,
-    updateQuantity,
-    removeFromCart,
-    getCartTotal,
-    getCartCount,
-  } = useContext(CartContext);
+  const { cartItems: cart = [], removeFromCart, updateQuantity, getCartTotal } = useContext(CartContext);
   const navigate = useNavigate();
+  
   const [recommendations, setRecommendations] = useState([]);
 
-  useEffect(() => {
-    const fetchCartRecommendations = async () => {
-      if (cartItems.length === 0) return;
-      try {
-        const seedId = cartItems[0].productId._id || cartItems[0].productId;
-        const { data } = await API.get(`/recommendations/${seedId}`);
-        setRecommendations(data);
-      } catch (err) {
-        // Gracefully handle missing recommendation service
-      }
-    };
-    fetchCartRecommendations();
-  }, [cartItems]);
-
   const subtotal = getCartTotal();
-  const delivery = subtotal > 30 || subtotal === 0 ? 0 : 4.99;
-  const total = subtotal + delivery;
+  const total = subtotal;
 
-  if (cartItems.length === 0) {
+  useEffect(() => {
+    if (cart.length > 0) fetchRecommendations();
+  }, [cart]);
+
+  const fetchRecommendations = async () => {
+    try {
+      const res = await API.get('/products');
+      const cartIds = cart.map(item => item.productId._id);
+      const recs = res.data
+        .filter(p => !cartIds.includes(p._id) && p.stock > 0)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 4);
+      setRecommendations(recs);
+    } catch (err) {
+      console.error('Failed to fetch recommendations', err);
+    }
+  };
+
+  if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-xl mx-auto card p-10 text-center shadow-elevated">
-          <div className="w-20 h-20 bg-surface-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-10 h-10 text-surface-300" />
+      <div className="container mx-auto px-4 py-24 sm:py-32 flex justify-center min-h-[70vh]">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="w-32 h-32 mx-auto rounded-full bg-surface-100 flex items-center justify-center">
+            <ShoppingCart className="w-16 h-16 text-surface-400" />
           </div>
-          <h2 className="text-2xl font-black text-surface-900">Your Basket is Empty</h2>
-          <p className="text-surface-500 text-sm mt-2 max-w-sm mx-auto">
-            Add fresh organic fruits, vegetables, bakery essentials, and dairy items to your cart.
-          </p>
-          <Link
-            to="/products"
-            className="btn-primary mt-8 inline-flex"
-          >
-            <span>Start Shopping</span>
-            <ArrowRight className="w-4 h-4" />
+          <div>
+            <h2 className="text-2xl font-display font-black text-surface-900">Your cart is empty</h2>
+            <p className="text-surface-500 mt-2 mb-8 text-sm">Add items to it now.</p>
+          </div>
+          <Link to="/products" className="btn-primary w-full py-4 text-base shadow-sm">
+            Shop now
           </Link>
         </div>
       </div>
@@ -57,178 +52,89 @@ const CartPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-      <div>
-        <h1 className="section-title">Shopping Basket</h1>
-        <p className="section-subtitle">Review your fresh groceries before placing order ({getCartCount()} items)</p>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-8 min-h-[80vh]">
+      
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-display font-black text-surface-900">Review your cart</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+        
+        {/* ── LEFT: CART ITEMS ── */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="card p-5 space-y-0">
-            {cartItems.map((item, index) => {
-              const prod = item.productId;
-              const id = prod._id || prod;
-              const name = prod.name || 'Grocery Item';
-              const price = prod.price || 0;
-              const image = prod.image || '';
-              const category = prod.category || 'Grocery';
-              
-              return (
-                <div
-                  key={id}
-                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-5 ${
-                    index !== cartItems.length - 1 ? 'border-b border-surface-100' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-surface-50 border border-surface-100 flex-shrink-0">
-                      <img src={image} alt={name} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <span className="badge-brand text-[10px]">
-                        {category}
-                      </span>
-                      <h3 className="font-bold text-surface-800 text-base mt-1">{name}</h3>
-                      <p className="text-surface-500 text-sm">₹{price.toFixed(2)} each</p>
-                    </div>
-                  </div>
+          
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-1 divide-y divide-surface-100">
 
-                  <div className="flex items-center justify-between w-full sm:w-auto gap-6 self-stretch sm:self-auto">
-                    <div className="flex items-center gap-1 bg-surface-50 border border-surface-200 rounded-xl p-1">
-                      <button
-                        onClick={() => updateQuantity(id, item.quantity - 1)}
-                        className="p-1.5 hover:bg-white rounded-lg text-surface-600 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-bold text-sm text-surface-800">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(id, item.quantity + 1)}
-                        className="p-1.5 hover:bg-white rounded-lg text-surface-600 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-surface-900 text-base min-w-[65px] text-right">
-                        ₹{(price * item.quantity).toFixed(2)}
-                      </span>
-                      <button
-                        onClick={() => removeFromCart(id)}
-                        className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        title="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+            {cart.map((item) => (
+              <div key={item.productId._id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                
+                <Link to={`/products/${item.productId._id}`} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-surface-100 bg-surface-50">
+                  <img src={item.productId.image} alt={item.productId.name} className="w-full h-full object-cover mix-blend-multiply" />
+                </Link>
 
-        {/* Summary */}
-        <div className="space-y-6">
-          <div className="card p-6 shadow-elevated space-y-6 sticky top-28">
-            <h3 className="font-bold text-surface-900 text-lg">Order Summary</h3>
-
-            <div className="space-y-3.5 border-b border-surface-100 pb-5 text-sm">
-              <div className="flex justify-between text-surface-500">
-                <span>Subtotal</span>
-                <span className="font-semibold text-surface-800">₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-surface-500">
-                <span>Delivery</span>
-                <span className="font-semibold text-surface-800">
-                  {delivery === 0 ? <span className="text-brand-600 font-bold">FREE</span> : `₹${delivery.toFixed(2)}`}
-                </span>
-              </div>
-              {delivery > 0 && (
-                <p className="text-[11px] text-brand-600 font-semibold bg-brand-50 p-2.5 rounded-xl">
-                  💡 Add ₹{(30 - subtotal).toFixed(2)} more for FREE shipping!
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-between text-base">
-              <span className="font-bold text-surface-900">Total Amount</span>
-              <span className="font-black text-brand-600 text-xl">₹{total.toFixed(2)}</span>
-            </div>
-
-            <button
-              onClick={() => navigate('/checkout')}
-              className="btn-primary w-full py-4"
-            >
-              <span>Proceed to Checkout</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-surface-400 pt-1">
-              <ShieldCheck className="w-4 h-4 text-brand-500" />
-              <span>Secure checkout powered by BasketIQ</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      {cartItems.length > 0 && recommendations.length > 0 && (
-        <section className="space-y-6 pt-10 border-t border-surface-200">
-          <div className="flex items-center gap-2.5">
-            <span className="p-2 bg-brand-50 text-brand-600 rounded-xl">
-              <Sparkles className="w-5 h-5" />
-            </span>
-            <div>
-              <h2 className="section-title text-xl sm:text-2xl">You Might Also Need</h2>
-              <p className="section-subtitle text-xs">AI-powered recommendations based on your basket</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            {recommendations.map((prod) => (
-              <div
-                key={prod._id}
-                className="card-hover p-4 flex flex-col justify-between group"
-              >
-                <div className="space-y-3">
-                  <Link to={`/products/${prod._id}`} className="block aspect-square w-full rounded-xl overflow-hidden bg-surface-50 relative">
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span className="absolute top-2 left-2 badge-brand text-[10px]">
-                      {prod.category}
-                    </span>
-                  </Link>
+                <div className="flex-1 min-w-0 w-full flex flex-col sm:flex-row justify-between gap-4">
                   <div>
-                    <Link to={`/products/${prod._id}`} className="block font-bold text-surface-800 hover:text-brand-600 text-sm truncate transition-colors">
-                      {prod.name}
+                    <Link to={`/products/${item.productId._id}`}>
+                      <h3 className="font-medium text-sm text-surface-900 hover:text-brand-600 transition-colors line-clamp-2">
+                        {item.productId.name}
+                      </h3>
                     </Link>
+                    <p className="text-xs text-surface-500 mt-1">{item.productId.category}</p>
+                    <p className="font-bold text-surface-900 text-sm mt-1">₹{item.productId.price.toFixed(0)}</p>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-surface-100">
-                  <span className="text-sm font-black text-surface-900">₹{prod.price.toFixed(2)}</span>
-                  <button
-                    onClick={() => updateQuantity(prod._id, 1)}
-                    className="p-2 bg-brand-50 hover:bg-brand-500 text-brand-600 hover:text-white rounded-lg transition-all duration-200 active:scale-95"
-                    title="Add to Cart"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                  </button>
+                  
+                  <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 shrink-0">
+                    <div className="flex items-center justify-between w-[90px] h-9 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg px-2 font-bold shadow-sm">
+                      <button onClick={() => updateQuantity(item.productId._id, item.quantity - 1)} className="p-1 hover:bg-emerald-100 rounded transition-colors"><Minus className="w-4 h-4" /></button>
+                      <span className="text-sm">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.productId._id, item.quantity + 1)} disabled={item.quantity >= item.productId.stock} className="p-1 hover:bg-emerald-100 rounded transition-colors disabled:opacity-30"><Plus className="w-4 h-4" /></button>
+                    </div>
+                    <button onClick={() => removeFromCart(item.productId._id)} className="text-xs font-bold text-surface-400 hover:text-rose-600 transition-colors">
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+
+        </div>
+
+        {/* ── RIGHT: SUMMARY ── */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-5 lg:sticky lg:top-28">
+            
+            <h3 className="font-bold text-sm text-surface-900 mb-3">Bill Details</h3>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between text-surface-600">
+                <span>Items total</span>
+                <span className="text-surface-900">₹{subtotal.toFixed(0)}</span>
+              </div>
+            </div>
+
+            <div className="pt-4 mt-4 border-t border-surface-100">
+              <div className="flex justify-between items-center mb-5">
+                <span className="text-surface-900 font-bold">Grand Total</span>
+                <span className="font-bold text-lg text-surface-900">₹{total.toFixed(0)}</span>
+              </div>
+              
+              <button onClick={() => navigate('/checkout')} className="w-full btn-primary py-3.5 text-base shadow-sm justify-between px-6">
+                <span>₹{total.toFixed(0)}</span>
+                <span className="flex items-center gap-1">Checkout <ChevronRight className="w-4 h-4" /></span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
+
+// Assuming you want to use ChevronRight in the button
+import { ChevronRight } from 'lucide-react';
 
 export default CartPage;

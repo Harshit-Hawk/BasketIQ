@@ -25,3 +25,17 @@ export const AdminRoute = ({ children }) => {
 
   return children;
 };
+
+export const DeliveryRoute = ({ children }) => {
+  const { user } = useContext(AuthContext);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role !== 'delivery' && user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};

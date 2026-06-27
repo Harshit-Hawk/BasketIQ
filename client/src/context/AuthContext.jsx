@@ -21,16 +21,29 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (!socket.connected) {
       socket.connect();
-      if (user.role === 'admin') {
-        socket.emit('join_room', 'admin');
-      } else {
-        socket.emit('join_room', user._id);
-      }
-    } else {
-      socket.disconnect();
     }
+    
+    const joinRoom = () => {
+      if (user) {
+        if (user.role === 'admin') {
+          socket.emit('join_room', 'admin');
+        } else {
+          socket.emit('join_room', user._id);
+        }
+      }
+    };
+
+    if (socket.connected) {
+      joinRoom();
+    } else {
+      socket.on('connect', joinRoom);
+    }
+
+    return () => {
+      socket.off('connect', joinRoom);
+    };
   }, [user]);
 
   const login = async (email, password) => {

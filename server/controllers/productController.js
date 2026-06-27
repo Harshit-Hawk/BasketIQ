@@ -57,6 +57,9 @@ export const createProduct = async (req, res) => {
       relatedProducts: relatedProducts || [],
     });
 
+    const io = req.app.get('io');
+    if (io) io.emit('product_created', product);
+
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -82,6 +85,10 @@ export const updateProduct = async (req, res) => {
       product.relatedProducts = relatedProducts || product.relatedProducts;
 
       const updatedProduct = await product.save();
+      
+      const io = req.app.get('io');
+      if (io) io.emit('product_updated', updatedProduct);
+
       res.json(updatedProduct);
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -100,6 +107,10 @@ export const deleteProduct = async (req, res) => {
 
     if (product) {
       await Product.deleteOne({ _id: req.params.id });
+      
+      const io = req.app.get('io');
+      if (io) io.emit('product_deleted', req.params.id);
+
       res.json({ message: 'Product removed successfully' });
     } else {
       res.status(404).json({ message: 'Product not found' });

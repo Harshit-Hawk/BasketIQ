@@ -1,238 +1,141 @@
-import { useState, useContext, useEffect } from 'react';
-import { User as UserIcon, Lock, MapPin, Phone, Mail, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import API from '../services/api';
+import { User as UserIcon, Mail, ShieldCheck, MapPin, CreditCard, Bell, LogOut, ArrowRight, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
-  const { user, updateUser } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-  });
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
 
-  const [passwordData, setPasswordData] = useState({
-    password: '',
-    confirmPassword: '',
-  });
-
-  const [status, setStatus] = useState({ type: '', message: '' });
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '',
-      });
-    }
-  }, [user]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handlePasswordChange = (e) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (passwordData.password && passwordData.password !== passwordData.confirmPassword) {
-      setStatus({ type: 'error', message: 'Passwords do not match.' });
-      return;
-    }
-
-    setLoading(true);
-    setStatus({ type: '', message: '' });
-
-    try {
-      const updatePayload = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-      };
-
-      if (passwordData.password) {
-        updatePayload.password = passwordData.password;
-      }
-
-      const { data } = await API.put('/auth/profile', updatePayload);
-      updateUser(data);
-      
-      setStatus({ type: 'success', message: 'Profile updated successfully!' });
-      setPasswordData({ password: '', confirmPassword: '' });
-      
-      setTimeout(() => setStatus({ type: '', message: '' }), 5000);
-    } catch (err) {
-      setStatus({ 
-        type: 'error', 
-        message: err.response?.data?.message || 'Failed to update profile.' 
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 max-w-4xl space-y-8">
-      <div>
-        <h1 className="section-title">My Profile</h1>
-        <p className="section-subtitle">Manage your personal information and security settings</p>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 max-w-5xl space-y-8 min-h-[80vh]">
+      
+      {/* ── HEADER ── */}
+      <div className="pb-6 border-b border-surface-200">
+        <h1 className="display-title text-2xl sm:text-3xl lg:text-4xl">My Profile</h1>
+        <p className="text-surface-500 mt-1 sm:mt-2 text-sm">Manage your personal information, address, and preferences.</p>
       </div>
 
-      {status.message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 ${
-          status.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-brand-50 text-brand-700 border border-brand-200'
-        }`}>
-          {status.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
-          <span className="text-sm font-semibold">{status.message}</span>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Profile Sidebar */}
+        
+        {/* ── LEFT: USER CARD ── */}
         <div className="md:col-span-1 space-y-6">
-          <div className="card p-6 flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center font-bold text-4xl shadow-inner mb-4">
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
-            <h2 className="font-bold text-lg text-surface-900">{user?.name}</h2>
-            <p className="text-sm text-surface-500">{user?.role === 'admin' ? 'Administrator' : 'Customer'}</p>
-            <div className="w-full border-t border-surface-100 my-4"></div>
-            <div className="w-full space-y-3 text-sm text-left">
-              <div className="flex items-center gap-3 text-surface-600">
-                <Mail className="w-4 h-4 text-brand-500" />
-                <span className="truncate">{user?.email}</span>
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-6 flex flex-col items-center text-center">
+            
+            <div className="relative group cursor-pointer">
+              <div className="w-24 h-24 rounded-full bg-brand-100 border border-brand-200 flex items-center justify-center text-3xl font-black text-brand-700 overflow-hidden">
+                {user.name.charAt(0).toUpperCase()}
               </div>
-              <div className="flex items-center gap-3 text-surface-600">
-                <Phone className="w-4 h-4 text-brand-500" />
-                <span className="truncate">{user?.phone || 'No phone added'}</span>
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            </div>
+
+            <h3 className="font-display font-bold text-xl text-surface-900 mt-4">{user.name}</h3>
+            <p className="text-sm text-surface-500">{user.email}</p>
+
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs font-bold text-surface-700 capitalize">
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+              {user.role}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-2 space-y-1">
+            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-surface-50 text-left text-sm font-bold text-surface-900 transition-colors">
+              <span className="flex items-center gap-3"><UserIcon className="w-4 h-4 text-surface-500" /> Personal Info</span>
+              <ArrowRight className="w-4 h-4 text-surface-500" />
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-50 text-left text-sm font-bold text-surface-600 transition-colors">
+              <span className="flex items-center gap-3"><MapPin className="w-4 h-4 text-surface-400" /> Saved Addresses</span>
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-50 text-left text-sm font-bold text-surface-600 transition-colors">
+              <span className="flex items-center gap-3"><CreditCard className="w-4 h-4 text-surface-400" /> Payment Methods</span>
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-50 text-left text-sm font-bold text-surface-600 transition-colors">
+              <span className="flex items-center gap-3"><Bell className="w-4 h-4 text-surface-400" /> Notifications</span>
+            </button>
+          </div>
+
+          <button 
+            onClick={handleLogout}
+            className="w-full btn-danger rounded-xl py-3 flex items-center justify-center gap-2"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
+        </div>
+
+        {/* ── RIGHT: DETAILS ── */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-6 sm:p-8">
+            <h3 className="font-bold text-lg text-surface-900 mb-6">Personal Information</h3>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-2">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input type="text" defaultValue={user.name} className="input-field pl-11" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-2">Phone Number</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-sm font-bold">+91</span>
+                    <input type="text" placeholder="98765 43210" className="input-field pl-12" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                  <input type="email" defaultValue={user.email} className="input-field pl-11 bg-surface-50 cursor-not-allowed text-surface-500" disabled />
+                </div>
+                <p className="text-xs text-surface-500 mt-2">Email address cannot be changed.</p>
+              </div>
+
+              <div className="pt-4 border-t border-surface-100 flex flex-col sm:flex-row justify-end gap-3">
+                <button className="btn-secondary px-5 py-2.5 text-sm">Cancel</button>
+                <button className="btn-primary px-6 py-2.5 text-sm">Save Changes</button>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Settings Form */}
-        <div className="md:col-span-2">
-          <form onSubmit={handleSubmit} className="card p-6 sm:p-8 space-y-8">
-            {/* Personal Details */}
-            <div className="space-y-5">
-              <h3 className="font-bold text-lg text-surface-900 flex items-center gap-2">
-                <UserIcon className="w-5 h-5 text-brand-500" />
-                Personal Information
-              </h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="input-field"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="input-field"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="+91 9876543210"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="input-field"
-                  />
-                </div>
-              </div>
+          
+          <div className="bg-white rounded-2xl shadow-card border border-surface-200 p-6 sm:p-8">
+            <h3 className="font-bold text-lg text-surface-900 mb-2">Account Preferences</h3>
+            <p className="text-sm text-surface-500 mb-6">Manage your email notifications and communications.</p>
+            
+            <div className="space-y-4">
+              {[
+                { title: 'Order Updates', desc: 'Receive SMS & emails about your order status.', defaultChecked: true },
+                { title: 'Daily Deals', desc: 'Get notified about fresh stock and new items.', defaultChecked: false },
+                { title: 'Newsletter', desc: 'Weekly tips on healthy eating and recipes.', defaultChecked: true },
+              ].map((pref, i) => (
+                <label key={i} className="flex items-start justify-between gap-4 p-4 rounded-xl border border-surface-200 bg-surface-50 cursor-pointer hover:border-surface-300 transition-colors">
+                  <div>
+                    <h4 className="font-bold text-surface-900 text-sm">{pref.title}</h4>
+                    <p className="text-xs text-surface-500 mt-1">{pref.desc}</p>
+                  </div>
+                  <div className="relative">
+                    <input type="checkbox" className="sr-only peer" defaultChecked={pref.defaultChecked} />
+                    <div className="w-11 h-6 bg-surface-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-surface-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500 border border-surface-300 peer-checked:border-brand-600"></div>
+                  </div>
+                </label>
+              ))}
             </div>
-
-            {/* Address */}
-            <div className="space-y-5 border-t border-surface-100 pt-8">
-              <h3 className="font-bold text-lg text-surface-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-brand-500" />
-                Default Delivery Address
-              </h3>
-              
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">Street Address</label>
-                <textarea
-                  name="address"
-                  rows="3"
-                  placeholder="E.g., 123 Main Street, Apt 4B, City, State, ZIP"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="input-field resize-none"
-                ></textarea>
-              </div>
-            </div>
-
-            {/* Security */}
-            <div className="space-y-5 border-t border-surface-100 pt-8">
-              <h3 className="font-bold text-lg text-surface-900 flex items-center gap-2">
-                <Lock className="w-5 h-5 text-brand-500" />
-                Change Password
-              </h3>
-              <p className="text-xs text-surface-500 -mt-2">Leave blank if you don't want to change your password.</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">New Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Enter new password"
-                    value={passwordData.password}
-                    onChange={handlePasswordChange}
-                    className="input-field"
-                    minLength="6"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider">Confirm Password</label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Confirm new password"
-                    value={passwordData.confirmPassword}
-                    onChange={handlePasswordChange}
-                    className="input-field"
-                    minLength="6"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <div className="pt-4 flex justify-end">
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary min-w-[150px]"
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

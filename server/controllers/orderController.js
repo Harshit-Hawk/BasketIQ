@@ -1,6 +1,7 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Cart from '../models/Cart.js';
+import User from '../models/User.js';
 
 // @desc    Create a new order & update stocks & clear cart
 // @route   POST /api/orders
@@ -14,6 +15,8 @@ export const createOrder = async (req, res) => {
     }
 
     // Verify stock and update product inventory
+    let calculatedTotal = 0;
+    
     for (const item of items) {
       const product = await Product.findById(item.productId);
       if (!product) {
@@ -27,16 +30,33 @@ export const createOrder = async (req, res) => {
       // Decrement stock
       product.stock -= item.quantity;
       await product.save();
+      
+      const io = req.app.get('io');
+      if (io) io.emit('product_updated', product);
+      
+      // Calculate subtotal for this item
+      calculatedTotal += product.price * item.quantity;
+    }
+    
+
+
+    // Auto-assign delivery partner
+    const deliveryPartners = await User.find({ role: 'delivery' });
+    let assignedPartnerId = null;
+    if (deliveryPartners.length > 0) {
+      const randomIndex = Math.floor(Math.random() * deliveryPartners.length);
+      assignedPartnerId = deliveryPartners[randomIndex]._id;
     }
 
     // Create the order
     const order = await Order.create({
       userId: req.user._id,
       items,
-      totalPrice,
+      totalPrice: calculatedTotal,
       shippingAddress,
       paymentMethod: paymentMethod || 'Cash on Delivery',
       paymentStatus: paymentStatus || 'Pending',
+      deliveryPartnerId: assignedPartnerId,
     });
 
     // Clear user's cart
@@ -90,7 +110,7 @@ export const getAllOrders = async (req, res) => {
 // @access  Private/Admin
 export const updateOrderStatus = async (req, res) => {
   try {
-    const { orderId, status } = req.body;
+    const { orderId, status, deliveryPartnerId } = req.body;
 
     if (!['Pending', 'Processing', 'Packed', 'Out for Delivery', 'Delivered'].includes(status)) {
       return res.status(400).json({ message: 'Invalid order status' });
@@ -99,7 +119,15 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(orderId);
 
     if (order) {
+      if (req.user.role === 'delivery' && order.deliveryPartnerId?.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to update this order' });
+      }
+
       order.orderStatus = status;
+      if (req.user.role === 'admin' && deliveryPartnerId !== undefined) {
+        order.deliveryPartnerId = deliveryPartnerId || null;
+      }
+
       const updatedOrder = await order.save();
       
       const io = req.app.get('io');
@@ -111,6 +139,20 @@ export const updateOrderStatus = async (req, res) => {
     } else {
       res.status(404).json({ message: 'Order not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get delivery partner orders
+// @route   GET /api/orders/delivery
+// @access  Private/Delivery
+export const getDeliveryOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ deliveryPartnerId: req.user._id })
+      .populate('userId', 'name phone address')
+      .sort({ createdAt: -1 });
+    res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
