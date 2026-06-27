@@ -145,7 +145,7 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <div>
+          <div className="hidden">
             <label className="block text-xs font-bold text-surface-600 uppercase tracking-widest mb-1.5">
               Account Role
             </label>

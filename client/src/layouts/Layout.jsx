@@ -69,10 +69,10 @@ const Layout = ({ children }) => {
 
             {/* Logo */}
             <Link to={homeLink} className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-brand-600 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <span className="text-2xl font-display font-black tracking-tight text-surface-950 hidden sm:block">
+              <span className="text-xl sm:text-2xl font-display font-black tracking-tight text-surface-950 block">
                 BasketIQ
               </span>
             </Link>
@@ -169,7 +169,7 @@ const Layout = ({ children }) => {
               </button>
 
               {/* Cart Button */}
-              <Link to="/cart" className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-colors">
+              <Link to="/cart" className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl flex items-center gap-2 transition-colors">
                 <ShoppingCart className="w-5 h-5" />
                 <div className="hidden sm:flex flex-col items-start leading-none">
                   {getCartCount() > 0 ? (

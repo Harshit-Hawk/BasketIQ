@@ -67,13 +67,13 @@ const CartPage = () => {
 
 
             {cart.map((item) => (
-              <div key={item.productId._id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div key={item.productId._id} className="p-4 flex flex-row items-center gap-4">
                 
-                <Link to={`/products/${item.productId._id}`} className="shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-surface-100 bg-surface-50">
+                <Link to={`/products/${item.productId._id}`} className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-surface-100 bg-surface-50">
                   <img src={item.productId.image} alt={item.productId.name} className="w-full h-full object-cover mix-blend-multiply" />
                 </Link>
 
-                <div className="flex-1 min-w-0 w-full flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex-1 min-w-0 w-full flex flex-col sm:flex-row justify-between gap-2 sm:gap-4">
                   <div>
                     <Link to={`/products/${item.productId._id}`}>
                       <h3 className="font-medium text-sm text-surface-900 hover:text-brand-600 transition-colors line-clamp-2">
